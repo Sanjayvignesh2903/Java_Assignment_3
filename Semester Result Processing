@@ -1,0 +1,72 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+enum ProcessStatus { SUCCESS, CORRUPT, MISSING }
+
+class FileProcessor implements Callable<ProcessStatus> {
+    private final int fileId;
+    private final Random rand = new Random();
+
+    public FileProcessor(int fileId) { this.fileId = fileId; }
+
+    @Override
+    public ProcessStatus call() {
+        try {
+            // Simulating file reading and failure injection
+            int chance = rand.nextInt(100);
+            if (chance < 2) throw new java.io.FileNotFoundException("File missing");
+            if (chance >= 2 && chance < 5) throw new NumberFormatException("Data corrupted");
+            
+            // Simulating processing time
+            Thread.sleep(1); 
+            return ProcessStatus.SUCCESS;
+
+        } catch (java.io.FileNotFoundException e) {
+            return ProcessStatus.MISSING;
+        } catch (NumberFormatException e) {
+            return ProcessStatus.CORRUPT;
+        } catch (Exception e) {
+            return ProcessStatus.CORRUPT;
+        }
+    }
+}
+
+public class SemesterResultProcessor {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+        int totalFiles = 10000;
+        int[] poolSizes = {1, 2, 4, 8};
+
+        for (int threads : poolSizes) {
+            ExecutorService executor = Executors.newFixedThreadPool(threads);
+            List<Future<ProcessStatus>> futures = new ArrayList<>();
+            
+            AtomicInteger success = new AtomicInteger(0);
+            AtomicInteger corrupt = new AtomicInteger(0);
+            AtomicInteger missing = new AtomicInteger(0);
+
+            long start = System.currentTimeMillis();
+
+            // Submit 10,000 tasks
+            for (int i = 0; i < totalFiles; i++) {
+                futures.add(executor.submit(new FileProcessor(i)));
+            }
+
+            // Aggregate results
+            for (Future<ProcessStatus> f : futures) {
+                ProcessStatus status = f.get(); // Blocks until task completes
+                if (status == ProcessStatus.SUCCESS) success.incrementAndGet();
+                else if (status == ProcessStatus.CORRUPT) corrupt.incrementAndGet();
+                else if (status == ProcessStatus.MISSING) missing.incrementAndGet();
+            }
+
+            executor.shutdown();
+            long time = System.currentTimeMillis() - start;
+
+            System.out.printf("Threads: %d | Time: %4d ms | Success: %d, Corrupt: %d, Missing: %d%n", 
+                              threads, time, success.get(), corrupt.get(), missing.get());
+        }
+    }
+}
