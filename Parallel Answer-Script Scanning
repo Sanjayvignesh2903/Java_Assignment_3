@@ -1,0 +1,69 @@
+// 1. Implementing Runnable
+class ScannerRunnable implements Runnable {
+    private String stationName;
+    private int scriptsScanned;
+
+    public ScannerRunnable(String name, int scripts) {
+        this.stationName = name;
+        this.scriptsScanned = scripts;
+    }
+
+    @Override
+    public void run() {
+        try {
+            System.out.println(stationName + " started scanning...");
+            Thread.sleep(500); // Simulating scanning time
+            System.out.println(stationName + " finished scanning " + scriptsScanned + " scripts.");
+        } catch (InterruptedException e) {
+            System.out.println(stationName + " interrupted.");
+        }
+    }
+}
+
+// 2. Extending Thread
+class ScannerThread extends Thread {
+    private int scriptsScanned;
+
+    public ScannerThread(String name, int scripts) {
+        super(name);
+        this.scriptsScanned = scripts;
+    }
+
+    @Override
+    public void run() {
+        try {
+            System.out.println(getName() + " started scanning...");
+            Thread.sleep(500); // Simulating scanning time
+            System.out.println(getName() + " finished scanning " + scriptsScanned + " scripts.");
+        } catch (InterruptedException e) {
+            System.out.println(getName() + " interrupted.");
+        }
+    }
+}
+
+public class ExamCell {
+    public static void main(String[] args) throws InterruptedException {
+        // Creating threads using both methods
+        Thread station1 = new Thread(new ScannerRunnable("Station 1", 250));
+        Thread station2 = new Thread(new ScannerRunnable("Station 2", 250));
+        ScannerThread station3 = new ScannerThread("Station 3", 250);
+        ScannerThread station4 = new ScannerThread("Station 4", 250);
+
+        // start() creates a new thread of execution
+        station1.start();
+        station2.start();
+        station3.start();
+        station4.start();
+
+        // Check if alive
+        System.out.println("Is Station 1 alive? " + station1.isAlive());
+
+        // join() ensures main thread waits for these to finish
+        station1.join();
+        station2.join();
+        station3.join();
+        station4.join();
+
+        System.out.println("All stations completed. Total scripts scanned: 1000.");
+    }
+}
