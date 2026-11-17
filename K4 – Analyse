@@ -1,0 +1,63 @@
+import java.io.*;
+import java.util.*;
+
+public class ReportGenerator {
+    
+    // 1. Manual close() with try-catch-finally
+    public static void generateReportManual(List<String> storeFiles, String summaryFile) {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(summaryFile);
+            for (String file : storeFiles) {
+                Scanner scanner = null;
+                try {
+                    scanner = new Scanner(new File(file));
+                    while (scanner.hasNextLine()) {
+                        writer.write(scanner.nextLine() + "\n");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error reading " + file + ": " + e.getMessage());
+                } finally {
+                    if (scanner != null) {
+                        scanner.close(); // Manual close
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing summary: " + e.getMessage());
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close(); // Manual close
+                } catch (IOException e) {
+                    System.err.println("Failed to close writer: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    // 2. try-with-resources
+    public static void generateReportTWR(List<String> storeFiles, String summaryFile) {
+        try (FileWriter writer = new FileWriter(summaryFile)) {
+            for (String file : storeFiles) {
+                // try-with-resources automatically closes the scanner
+                try (Scanner scanner = new Scanner(new File(file))) {
+                    while (scanner.hasNextLine()) {
+                        writer.write(scanner.nextLine() + "\n");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error reading " + file + ": " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing summary: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        List<String> files = Arrays.asList("store1.txt", "store2.txt");
+        // Ensure these dummy files exist to test
+        generateReportManual(files, "summary_manual.txt");
+        generateReportTWR(files, "summary_twr.txt");
+    }
+}
