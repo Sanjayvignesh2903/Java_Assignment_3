@@ -1,0 +1,56 @@
+public class SeatBooking {
+    private final boolean[] booked;
+    private int bookingsMade = 0;
+
+    SeatBooking(int seats) { 
+        booked = new boolean[seats]; 
+    }
+
+    // TODO 1 COMPLETED: Make the check-then-book operation atomic
+    public void book(int seat) {
+        // Option A: Unsynchronized (Race condition prone - causes double booking)
+        /*
+        if (!booked[seat]) {
+            try { Thread.sleep(10); } catch (InterruptedException e) {} // Force context switch
+            booked[seat] = true;
+            bookingsMade++;
+        }
+        */
+
+        // Option B: Synchronized Method (Locks the entire SeatBooking object)
+        /*
+        public synchronized void book(int seat) {
+            if (!booked[seat]) {
+                booked[seat] = true;
+                bookingsMade++;
+            }
+        }
+        */
+
+        // Option C: Synchronized Block (Locks only the shared array) - Recommended here
+        synchronized (this) {
+            if (!booked[seat]) {
+                // Simulate processing time
+                try { Thread.sleep(1); } catch (InterruptedException e) {} 
+                booked[seat] = true;
+                bookingsMade++;
+            }
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        SeatBooking screen = new SeatBooking(10);
+        Thread[] users = new Thread[100];
+        
+        for (int i = 0; i < users.length; i++) {
+            final int seat = i % 10; // 10 users compete for every seat
+            users[i] = new Thread(() -> screen.book(seat));
+            users[i].start();
+        }
+        
+        for (Thread t : users) t.join();
+        
+        // Expected output after fixing: Seats sold: 10
+        System.out.println("Seats sold: " + screen.bookingsMade);
+    }
+}
